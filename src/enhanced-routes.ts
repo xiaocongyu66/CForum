@@ -728,7 +728,17 @@ export async function handleEnhancedRoutes(
     if (!packUrl || !packUrl.startsWith('https://')) return jsonResponse({ error: '无效URL' }, 400);
     const res = await fetch(packUrl, { headers: { 'User-Agent': 'CForum/2.0' } });
     const data = await res.json();
-    return jsonResponse(data);
+    // Convert Twikoo {name, items:[{key,val}]} format to standard array
+    let result = data;
+    if (data && Array.isArray(data.items)) {
+      result = data.items.map((item: any) => ({
+        id: 0, pack_id: 0,
+        name: item.key,
+        url: item.val,
+        shortcode: item.key,
+      }));
+    }
+    return jsonResponse(result);
   }
 
   // ────────────────────────────────────────────────────────────────────────

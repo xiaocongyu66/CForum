@@ -590,8 +590,8 @@ export function PostPage() {
 												</div>
 												<div className="mt-2 whitespace-pre-wrap text-sm">{c.content}</div>
 												{c.replies && c.replies.length ? (
-													<div className="mt-3 space-y-2 border-l pl-3">
-														{c.replies.map((r) => (
+													<div className="mt-3 border-l-2 border-muted pl-3">
+														{c.replies.slice(-1).map((r) => (
 															<div key={r.id} className="rounded-md bg-muted/30 p-2">
 																<div className="flex items-center justify-between gap-2">
 																	<div className="text-xs">
@@ -629,6 +629,17 @@ export function PostPage() {
 																<div className="mt-1 whitespace-pre-wrap text-sm">{r.content}</div>
 															</div>
 														))}
+														{c.replies.length > 1 && (
+															<button
+																className="mt-2 text-xs text-primary hover:underline font-medium"
+																onClick={() => {
+																	const id = new URLSearchParams(window.location.search).get("id");
+																	window.location.href = `/post?id=${id}&floor=${c.floor_number || c.id}`;
+																}}
+															>
+																展开全部 {c.replies.length} 条回复 →
+															</button>
+														)}
 													</div>
 												) : null}
 											</div>
@@ -649,7 +660,13 @@ export function PostPage() {
 
 								<form className="space-y-3" onSubmit={submitComment}>
 									{commentError ? <div className="rounded-md border border-destructive/50 bg-destructive/5 p-3 text-sm text-destructive">{commentError}</div> : null}
-									<Textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} rows={4} placeholder="写下你的评论..." />
+									<Textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} rows={4} placeholder="写下你的评论... 支持 Markdown 格式，用 ![表情名](图片URL) 插入表情" />
+									<div className="flex items-center gap-2 text-xs text-muted-foreground">
+										<span>💡 支持表情包：</span>
+										<button type="button" className="underline hover:text-foreground" onClick={() => window.open("/emoji-plaza", "_blank")}>
+											前往表情包广场获取代码
+										</button>
+									</div>
 						<TurnstileWidget enabled={turnstileActive} siteKey={siteKey} onToken={setTurnstileToken} resetKey={turnstileResetKey} />
 									<div className="flex items-center gap-2">
 										<Button type="submit" disabled={commentLoading}>

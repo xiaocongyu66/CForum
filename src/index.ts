@@ -422,6 +422,7 @@ export default {
 					token,
 					user: {
 						id: user.id,
+						uid: user.uid,
 						email: user.email,
 						username: user.username,
 						avatar_url: user.avatar_url,
@@ -494,6 +495,7 @@ export default {
 					success: true,
 					user: {
 						id: user.id,
+						uid: user.uid,
 						email: user.email,
 						username: user.username,
 						avatar_url: user.avatar_url,

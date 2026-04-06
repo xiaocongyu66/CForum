@@ -83,7 +83,7 @@ export function SiteHeader({
 					{user ? (
 						<>
 							{/* Avatar + Name */}
-							<a href="/profile" className="flex items-center gap-2 px-2 rounded-lg hover:bg-muted transition-colors">
+							<a href={`/profile?uid=${user?.uid || user?.id}`} className="flex items-center gap-2 px-2 rounded-lg hover:bg-muted transition-colors">
 								{user.avatar_url ? (
 									<img
 										src={user.avatar_url}
