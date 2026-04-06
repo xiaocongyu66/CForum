@@ -1,3 +1,5 @@
+PRAGMA foreign_keys = OFF;
+
 -- ============================================================
 -- CForum Complete Schema (v1+v2 Merged)
 -- Single source of truth — 0002 has been removed
@@ -432,3 +434,5 @@ INSERT INTO categories (name, description, color) VALUES
 INSERT INTO posts (author_id, title, content, category_id) VALUES
   (1, 'Welcome to CForum', 'This is an official announcement from the admin.', 1),
   (2, 'Hello World', 'This is the first post by Alice!', 2);
+
+PRAGMA foreign_keys = ON;
