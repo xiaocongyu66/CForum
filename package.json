@@ -4,7 +4,7 @@
 	"private": true,
 	"author": "adysec",
 	"scripts": {
-		"build:frontend": "vite build --config frontend/vite.config.ts",
+		"build:frontend": "vite build --config frontend/vite.config.ts && node -e \"const fs=require('fs');const r=`# SPA routing\\n/profile /profile.html 200\\n/emoji-plaza /emoji-plaza.html 200\\n/sections /sections.html 200\\n/notifications /notifications.html 200\\n/post /post.html 200\\n/settings /settings.html 200\\n/admin /admin.html 200\\n/login /login.html 200\\n/register /register.html 200\\n/forgot /forgot.html 200\\n/reset /reset.html 200`;fs.writeFileSync('public/_redirects',r);console.log('✅ _redirects written');\"",
 		"dev:frontend": "vite --config frontend/vite.config.ts",
 		"dev": "npm run build:frontend && wrangler dev --local",
 		"dev:pages": "npm run build:frontend && wrangler pages dev public -- npm run dev:frontend",
