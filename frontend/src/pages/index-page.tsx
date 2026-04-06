@@ -667,7 +667,7 @@ export function IndexPage() {
 														)}
 														<a
 															className="truncate text-base font-semibold text-foreground hover:text-primary transition-colors"
-															href={`/posts/${p.id}`}
+															href={`/post?id=${p.id}`}
 														>
 															{p.title}
 														</a>
