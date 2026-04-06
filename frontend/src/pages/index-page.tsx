@@ -19,7 +19,10 @@ export function IndexPage() {
 	const user = React.useMemo(() => getUser(), [token]);
 	const [banner, setBanner] = React.useState<string>('');
 	const [categories, setCategories] = React.useState<Category[]>([]);
-	const [selectedCategory, setSelectedCategory] = React.useState<string>('');
+	const [selectedCategory, setSelectedCategory] = React.useState<string>(() => {
+		const params = new URLSearchParams(window.location.search);
+		return params.get('category_id') || params.get('category') || '';
+	});
 	const [searchInput, setSearchInput] = React.useState<string>('');
 	const [searchQuery, setSearchQuery] = React.useState<string>('');
 	const [posts, setPosts] = React.useState<Post[]>([]);

@@ -166,21 +166,17 @@ export default {
 
 		// Ensure the database schema exists before anything else.
 		const ensureSchema = async () => {
-			try {
-				await env.cforum_db.prepare('SELECT 1 FROM posts LIMIT 1').first();
-				return;
-			} catch (err: any) {
-				console.warn('Database schema missing, initializing', err);
-			}
-
-			// using prepare().run() instead of exec ensures each statement is committed
+			// Always run ALTER TABLE migrations to add missing columns/tables
+			// These are safe because of IF NOT EXISTS / try-catch
 			const stmts = [
+				// ── Core tables (CREATE IF NOT EXISTS) ──────────────────────────
 				`CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   email TEXT NOT NULL UNIQUE,
   username TEXT NOT NULL,
   password TEXT NOT NULL,
   role TEXT DEFAULT 'user',
+  display_role TEXT DEFAULT '',
   verified INTEGER DEFAULT 0,
   verification_token TEXT,
   totp_secret TEXT,
@@ -192,11 +188,34 @@ export default {
   avatar_url TEXT,
   nickname TEXT,
   email_notifications INTEGER DEFAULT 1,
+  uid TEXT UNIQUE,
+  signature TEXT DEFAULT '',
+  bio TEXT DEFAULT '',
+  custom_link TEXT DEFAULT '',
+  custom_link_approved INTEGER DEFAULT 0,
+  custom_link_pending TEXT DEFAULT '',
+  ban_reason TEXT,
+  banned_until INTEGER,
+  follower_count INTEGER DEFAULT 0,
+  following_count INTEGER DEFAULT 0,
+  post_count INTEGER DEFAULT 0,
+  comment_count INTEGER DEFAULT 0,
+  coin_balance INTEGER DEFAULT 100,
+  e2e_public_key TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );`,
 				`CREATE TABLE IF NOT EXISTS categories (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL UNIQUE,
+  description TEXT DEFAULT '',
+  image_url TEXT DEFAULT '',
+  icon TEXT DEFAULT '',
+  color TEXT DEFAULT '#6366f1',
+  sort_order INTEGER DEFAULT 0,
+  is_visible INTEGER DEFAULT 1,
+  announcement TEXT DEFAULT '',
+  announcement_post_id INTEGER,
+  post_count INTEGER DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );`,
 				`CREATE TABLE IF NOT EXISTS posts (
@@ -206,7 +225,17 @@ export default {
   content TEXT NOT NULL,
   category_id INTEGER,
   is_pinned INTEGER DEFAULT 0,
+  is_locked INTEGER DEFAULT 0,
+  is_hidden INTEGER DEFAULT 0,
   view_count INTEGER NOT NULL DEFAULT 0,
+  bookmark_count INTEGER DEFAULT 0,
+  image_urls TEXT DEFAULT '[]',
+  review_status TEXT DEFAULT 'approved',
+  review_label TEXT DEFAULT '',
+  review_reason TEXT DEFAULT '',
+  reviewed_by INTEGER,
+  reviewed_at TIMESTAMP,
+  last_comment_at TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (author_id) REFERENCES users(id),
   FOREIGN KEY (category_id) REFERENCES categories(id)
@@ -217,6 +246,14 @@ export default {
   parent_id INTEGER,
   author_id INTEGER NOT NULL,
   content TEXT NOT NULL,
+  floor_number INTEGER,
+  like_count INTEGER DEFAULT 0,
+  image_urls TEXT DEFAULT '[]',
+  is_hidden INTEGER DEFAULT 0,
+  review_status TEXT DEFAULT 'approved',
+  review_label TEXT DEFAULT '',
+  is_encrypted INTEGER DEFAULT 0,
+  encryption_hint TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (post_id) REFERENCES posts(id),
   FOREIGN KEY (parent_id) REFERENCES comments(id),
@@ -230,6 +267,138 @@ export default {
   UNIQUE(post_id, user_id),
   FOREIGN KEY (post_id) REFERENCES posts(id),
   FOREIGN KEY (user_id) REFERENCES users(id)
+);`,
+				`CREATE TABLE IF NOT EXISTS comment_likes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  comment_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(comment_id, user_id),
+  FOREIGN KEY (comment_id) REFERENCES comments(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);`,
+				`CREATE TABLE IF NOT EXISTS follows (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  follower_id INTEGER NOT NULL,
+  following_id INTEGER NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(follower_id, following_id),
+  FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (following_id) REFERENCES users(id) ON DELETE CASCADE
+);`,
+				`CREATE TABLE IF NOT EXISTS bookmarks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  post_id INTEGER NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id, post_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+);`,
+				`CREATE TABLE IF NOT EXISTS appreciations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  sender_id INTEGER NOT NULL,
+  receiver_id INTEGER NOT NULL,
+  post_id INTEGER,
+  amount INTEGER NOT NULL DEFAULT 1,
+  message TEXT DEFAULT '',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE SET NULL
+);`,
+				`CREATE TABLE IF NOT EXISTS reports (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  reporter_id INTEGER NOT NULL,
+  target_type TEXT NOT NULL,
+  target_id INTEGER NOT NULL,
+  reason TEXT NOT NULL,
+  detail TEXT DEFAULT '',
+  status TEXT DEFAULT 'pending',
+  resolved_by INTEGER,
+  resolved_at TIMESTAMP,
+  resolution_note TEXT DEFAULT '',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE
+);`,
+				`CREATE TABLE IF NOT EXISTS category_moderators (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  category_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
+  level TEXT DEFAULT 'sub_mod',
+  granted_by INTEGER NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(category_id, user_id),
+  FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);`,
+				`CREATE TABLE IF NOT EXISTS moderation_queue (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  content_type TEXT NOT NULL,
+  content_id INTEGER NOT NULL,
+  content_text TEXT NOT NULL,
+  author_id INTEGER NOT NULL,
+  ai_score REAL,
+  ai_labels TEXT DEFAULT '[]',
+  ai_reason TEXT DEFAULT '',
+  status TEXT DEFAULT 'pending_ai',
+  assigned_to INTEGER,
+  reviewed_by INTEGER,
+  reviewed_at TIMESTAMP,
+  review_note TEXT DEFAULT '',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (author_id) REFERENCES users(id)
+);`,
+				`CREATE TABLE IF NOT EXISTS emoji_packs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL UNIQUE,
+  description TEXT DEFAULT '',
+  cover_url TEXT DEFAULT '',
+  twikoo_url TEXT DEFAULT '',
+  is_builtin INTEGER DEFAULT 0,
+  is_active INTEGER DEFAULT 1,
+  created_by INTEGER,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);`,
+				`CREATE TABLE IF NOT EXISTS emoji_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  pack_id INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  url TEXT NOT NULL,
+  shortcode TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (pack_id) REFERENCES emoji_packs(id) ON DELETE CASCADE
+);`,
+				`CREATE TABLE IF NOT EXISTS notifications (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  type TEXT NOT NULL,
+  actor_id INTEGER,
+  ref_type TEXT,
+  ref_id INTEGER,
+  message TEXT NOT NULL,
+  is_read INTEGER DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);`,
+				`CREATE TABLE IF NOT EXISTS link_requests (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  url TEXT NOT NULL,
+  label TEXT DEFAULT '',
+  status TEXT DEFAULT 'pending',
+  reviewed_by INTEGER,
+  reviewed_at TIMESTAMP,
+  reject_reason TEXT DEFAULT '',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);`,
+				`CREATE TABLE IF NOT EXISTS captcha_store (
+  id TEXT PRIMARY KEY,
+  answer TEXT NOT NULL,
+  type TEXT DEFAULT 'math',
+  expires_at INTEGER NOT NULL,
+  used INTEGER DEFAULT 0
 );`,
 				`CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
@@ -256,22 +425,74 @@ export default {
   ip_address TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );`,
-				`INSERT OR IGNORE INTO settings (key, value) VALUES ('turnstile_enabled', '0');`,
-				`INSERT OR IGNORE INTO users (email, username, password, role, verified, nickname) VALUES 
-('admin@adysec.com', 'Admin', 'e86f78a8a3caf0b60d8e74e5942aa6d86dc150cd3c03338aef25b7d2d7e3acc7', 'admin', 1, 'System Admin');`
+				// ── ALTER TABLE: add missing columns to existing tables ──────────
+				`ALTER TABLE users ADD COLUMN uid TEXT UNIQUE`,
+				`ALTER TABLE users ADD COLUMN display_role TEXT DEFAULT ''`,
+				`ALTER TABLE users ADD COLUMN signature TEXT DEFAULT ''`,
+				`ALTER TABLE users ADD COLUMN bio TEXT DEFAULT ''`,
+				`ALTER TABLE users ADD COLUMN custom_link TEXT DEFAULT ''`,
+				`ALTER TABLE users ADD COLUMN custom_link_approved INTEGER DEFAULT 0`,
+				`ALTER TABLE users ADD COLUMN custom_link_pending TEXT DEFAULT ''`,
+				`ALTER TABLE users ADD COLUMN ban_reason TEXT`,
+				`ALTER TABLE users ADD COLUMN banned_until INTEGER`,
+				`ALTER TABLE users ADD COLUMN follower_count INTEGER DEFAULT 0`,
+				`ALTER TABLE users ADD COLUMN following_count INTEGER DEFAULT 0`,
+				`ALTER TABLE users ADD COLUMN post_count INTEGER DEFAULT 0`,
+				`ALTER TABLE users ADD COLUMN comment_count INTEGER DEFAULT 0`,
+				`ALTER TABLE users ADD COLUMN coin_balance INTEGER DEFAULT 100`,
+				`ALTER TABLE users ADD COLUMN e2e_public_key TEXT`,
+				`ALTER TABLE categories ADD COLUMN description TEXT DEFAULT ''`,
+				`ALTER TABLE categories ADD COLUMN image_url TEXT DEFAULT ''`,
+				`ALTER TABLE categories ADD COLUMN icon TEXT DEFAULT ''`,
+				`ALTER TABLE categories ADD COLUMN color TEXT DEFAULT '#6366f1'`,
+				`ALTER TABLE categories ADD COLUMN sort_order INTEGER DEFAULT 0`,
+				`ALTER TABLE categories ADD COLUMN is_visible INTEGER DEFAULT 1`,
+				`ALTER TABLE categories ADD COLUMN announcement TEXT DEFAULT ''`,
+				`ALTER TABLE categories ADD COLUMN announcement_post_id INTEGER`,
+				`ALTER TABLE categories ADD COLUMN post_count INTEGER DEFAULT 0`,
+				`ALTER TABLE posts ADD COLUMN is_locked INTEGER DEFAULT 0`,
+				`ALTER TABLE posts ADD COLUMN is_hidden INTEGER DEFAULT 0`,
+				`ALTER TABLE posts ADD COLUMN bookmark_count INTEGER DEFAULT 0`,
+				`ALTER TABLE posts ADD COLUMN image_urls TEXT DEFAULT '[]'`,
+				`ALTER TABLE posts ADD COLUMN review_status TEXT DEFAULT 'approved'`,
+				`ALTER TABLE posts ADD COLUMN review_label TEXT DEFAULT ''`,
+				`ALTER TABLE posts ADD COLUMN review_reason TEXT DEFAULT ''`,
+				`ALTER TABLE posts ADD COLUMN reviewed_by INTEGER`,
+				`ALTER TABLE posts ADD COLUMN reviewed_at TIMESTAMP`,
+				`ALTER TABLE posts ADD COLUMN last_comment_at TIMESTAMP`,
+				`ALTER TABLE comments ADD COLUMN floor_number INTEGER`,
+				`ALTER TABLE comments ADD COLUMN like_count INTEGER DEFAULT 0`,
+				`ALTER TABLE comments ADD COLUMN image_urls TEXT DEFAULT '[]'`,
+				`ALTER TABLE comments ADD COLUMN is_hidden INTEGER DEFAULT 0`,
+				`ALTER TABLE comments ADD COLUMN review_status TEXT DEFAULT 'approved'`,
+				`ALTER TABLE comments ADD COLUMN review_label TEXT DEFAULT ''`,
+				`ALTER TABLE comments ADD COLUMN is_encrypted INTEGER DEFAULT 0`,
+				`ALTER TABLE comments ADD COLUMN encryption_hint TEXT`,
+				// ── Default settings ─────────────────────────────────────────────
+				`INSERT OR IGNORE INTO settings (key, value) VALUES ('turnstile_enabled', '0')`,
+				`INSERT OR IGNORE INTO settings (key, value) VALUES ('forum_name', 'CForum')`,
+				`INSERT OR IGNORE INTO settings (key, value) VALUES ('registration_open', '1')`,
+				`INSERT OR IGNORE INTO settings (key, value) VALUES ('require_email_verify', '1')`,
+				`INSERT OR IGNORE INTO settings (key, value) VALUES ('twikoo_emoji_enabled', '1')`,
+				`INSERT OR IGNORE INTO settings (key, value) VALUES ('twikoo_emoji_url', 'https://cdn.jsdelivr.net/gh/shuhaocode/Twikoo-emoji@main/')`,
+				`INSERT OR IGNORE INTO settings (key, value) VALUES ('api_enabled', '1')`,
+				`INSERT OR IGNORE INTO settings (key, value) VALUES ('post_review_enabled', '0')`,
+				`INSERT OR IGNORE INTO settings (key, value) VALUES ('comment_review_enabled', '0')`,
+				// ── Seed admin user ──────────────────────────────────────────────
+				`INSERT OR IGNORE INTO users (email, username, password, role, verified, nickname, uid) VALUES 
+('admin@adysec.com', 'Admin', 'e86f78a8a3caf0b60d8e74e5942aa6d86dc150cd3c03338aef25b7d2d7e3acc7', 'admin', 1, 'System Admin', 'admin-001')`,
+				// ── Ensure admin uid is set if user already exists without uid ───
+				`UPDATE users SET uid='admin-001' WHERE email='admin@adysec.com' AND (uid IS NULL OR uid='')`,
 			];
 			for (const stmt of stmts) {
 				try {
 					await env.cforum_db.prepare(stmt).run();
-				} catch (e) {
-					console.error('Error running schema statement', e, stmt);
+				} catch (e: any) {
+					// Ignore "duplicate column" errors from ALTER TABLE — expected on re-run
+					if (!e?.message?.includes('duplicate column') && !e?.message?.includes('already exists')) {
+						console.warn('Schema stmt skipped:', e?.message?.slice(0, 80));
+					}
 				}
-			}
-			// verify posts table exists now
-			try {
-				await env.cforum_db.prepare('SELECT 1 FROM posts LIMIT 1').first();
-			} catch (e) {
-				console.error('Failed to verify posts table after init', e);
 			}
 		};
 

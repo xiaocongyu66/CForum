@@ -19,7 +19,7 @@ function SectionCard({ section }: { section: Section }) {
 	const color = section.color || '#6366f1';
 	return (
 		<a
-			href={`/?category=${section.id}`}
+			href={`/?category_id=${section.id}`}
 			className="block group card-post p-0 overflow-hidden"
 			style={{ borderRadius: '12px' }}
 		>
