@@ -1,4 +1,4 @@
-// frontend/src/entries/profile.tsx
+import { mount } from './bootstrap';
 import { ProfilePage } from '@/pages/profile-page';
-import { bootstrap } from './bootstrap';
-bootstrap(<ProfilePage />);
+
+mount('root', <ProfilePage />);

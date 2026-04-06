@@ -16,7 +16,7 @@
 	],
 	"workers_dev": true,
 	"vars": {
-		"BASE_URL": "https://your-forum.pages.dev",
+		"BASE_URL": "https://t.x9n2.qzz.io",
 		"SMTP_HOST": "smtp.example.com",
 		"SMTP_PORT": "465",
 		"SMTP_USER": "noreply@example.com",
@@ -29,7 +29,7 @@
 		"production": {
 			"vars": {
 				"WORKER_URL": "https://cforum.adysec.workers.dev",
-				"BASE_URL": "https://your-forum.pages.dev",
+				"BASE_URL": "https://t.x9n2.qzz.io",
 				"SMTP_HOST": "smtp.example.com",
 				"SMTP_PORT": "465",
 				"SMTP_USER": "noreply@example.com",

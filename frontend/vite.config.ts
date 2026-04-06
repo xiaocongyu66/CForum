@@ -18,18 +18,20 @@ export default defineConfig({
 			polyfill: false
 		},
 		rollupOptions: {
-    input: {
-        index:      path.resolve(__dirname, 'pages', 'index.html'),
-        login:      path.resolve(__dirname, 'pages', 'login.html'),
-        register:   path.resolve(__dirname, 'pages', 'register.html'),
-        forgot:     path.resolve(__dirname, 'pages', 'forgot.html'),
-        reset:      path.resolve(__dirname, 'pages', 'reset.html'),
-        post:       path.resolve(__dirname, 'pages', 'post.html'),
-        settings:   path.resolve(__dirname, 'pages', 'settings.html'),
-        admin:      path.resolve(__dirname, 'pages', 'admin.html'),
-        profile:    path.resolve(__dirname, 'pages', 'profile.html'),
-        'emoji-plaza': path.resolve(__dirname, 'pages', 'emoji-plaza.html'),
-    }
+			input: {
+				index:         path.resolve(__dirname, 'pages', 'index.html'),
+				login:         path.resolve(__dirname, 'pages', 'login.html'),
+				register:      path.resolve(__dirname, 'pages', 'register.html'),
+				forgot:        path.resolve(__dirname, 'pages', 'forgot.html'),
+				reset:         path.resolve(__dirname, 'pages', 'reset.html'),
+				post:          path.resolve(__dirname, 'pages', 'post.html'),
+				settings:      path.resolve(__dirname, 'pages', 'settings.html'),
+				admin:         path.resolve(__dirname, 'pages', 'admin.html'),
+				profile:       path.resolve(__dirname, 'pages', 'profile.html'),
+				'emoji-plaza': path.resolve(__dirname, 'pages', 'emoji-plaza.html'),
+				sections:      path.resolve(__dirname, 'pages', 'sections.html'),
+				notifications: path.resolve(__dirname, 'pages', 'notifications.html'),
+			}
 		}
 	},
 	resolve: {
