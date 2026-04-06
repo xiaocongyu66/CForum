@@ -1989,8 +1989,10 @@ if (enhanced) return enhanced;
     pathname === '/settings'    ? '/settings.html' :
     pathname === '/admin'       ? '/admin.html' :
     pathname === '/post'        ? '/post.html' :
-    pathname === '/profile'     ? '/profile.html' :       // ← 新增
-    pathname === '/emoji-plaza' ? '/emoji-plaza.html' :   // ← 新增
+    pathname === '/profile'       ? '/profile.html' :
+    pathname === '/emoji-plaza'   ? '/emoji-plaza.html' :
+    pathname === '/sections'      ? '/sections.html' :
+    pathname === '/notifications' ? '/notifications.html' :
     pathname;
 
 			const assetUrl = new URL(request.url);

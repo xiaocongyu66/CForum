@@ -33,6 +33,10 @@ export default {
 		'/post/*': 'functions/[[path]]',
 		'/admin': 'functions/[[path]]',
 		'/settings': 'functions/[[path]]',
+		'/profile': 'functions/[[path]]',
+		'/emoji-plaza': 'functions/[[path]]',
+		'/sections': 'functions/[[path]]',
+		'/notifications': 'functions/[[path]]',
 		
 		// 静态资源从 public 返回
 		'*': 'public/*'
