@@ -1,0 +1,1 @@
+!/*! License details at fancyapps.com/license */function(s,e){"object"==typeof exports&&"u">typeof module?e(exports):"function"==typeof define&&define.amd?define(["exports"],e):e((s="u">typeof globalThis?globalThis:s||self).window=s.window||{})}(this,function(s){"use strict";s.addClass=(s,e="")=>{s&&s.classList&&e.split(" ").forEach(e=>{e&&s.classList.add(e)})}});
