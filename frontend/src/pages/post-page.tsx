@@ -595,7 +595,7 @@ export function PostPage() {
 														) : null}
 													</div>
 												</div>
-												<div className="mt-2 whitespace-pre-wrap text-sm">{c.content}</div>
+												<div className="mt-2 text-sm prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: renderMarkdownToHtml(c.content || '') }} />
 												{c.replies && c.replies.length ? (
 													<div className="mt-3 border-l-2 border-muted pl-3">
 														{(expandedFloors.has(c.id) ? c.replies : c.replies.slice(-1)).map((r) => (
@@ -633,7 +633,7 @@ export function PostPage() {
 																		</Button>
 																	) : null}
 																</div>
-																<div className="mt-1 whitespace-pre-wrap text-sm">{r.content}</div>
+																<div className="mt-1 text-sm prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: renderMarkdownToHtml(r.content || '') }} />
 															</div>
 														))}
 														{c.replies.length > 1 && (
