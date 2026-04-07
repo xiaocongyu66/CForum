@@ -386,10 +386,13 @@ export async function handleEnhancedRoutes(
     const uidOrId = profileMatch[1];
     const row = await db
       .prepare(
-        `SELECT id,uid,username,nickname,avatar_url,bio,signature,custom_link,
-                role,display_role,coin_balance,follower_count,following_count,
-                post_count,comment_count,created_at
-         FROM users WHERE uid=? OR id=?`
+        `SELECT u.id,u.uid,u.username,u.nickname,u.avatar_url,u.bio,u.signature,u.custom_link,
+                u.role,u.display_role,u.coin_balance,u.created_at,
+                (SELECT COUNT(*) FROM posts WHERE author_id=u.id) AS post_count,
+                (SELECT COUNT(*) FROM comments WHERE author_id=u.id) AS comment_count,
+                (SELECT COUNT(*) FROM follows WHERE following_id=u.id) AS follower_count,
+                (SELECT COUNT(*) FROM follows WHERE follower_id=u.id) AS following_count
+         FROM users u WHERE u.uid=? OR u.id=?`
       )
       .bind(uidOrId, isNaN(Number(uidOrId)) ? -1 : Number(uidOrId))
       .first();

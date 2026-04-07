@@ -30,6 +30,10 @@ export function PostPage() {
 	const [replyTo, setReplyTo] = React.useState<Comment | null>(null);
 	const [commentLoading, setCommentLoading] = React.useState(false);
 	const [commentError, setCommentError] = React.useState('');
+	const [showEmojiPicker, setShowEmojiPicker] = React.useState(false);
+	const [emojiPacks, setEmojiPacks] = React.useState<any[]>([]);
+	const [activePackIdx, setActivePackIdx] = React.useState(0);
+	const [emojisLoaded, setEmojisLoaded] = React.useState(false);
 	const [turnstileToken, setTurnstileToken] = React.useState('');
 	const [turnstileResetKey, setTurnstileResetKey] = React.useState(0);
 
@@ -661,11 +665,46 @@ export function PostPage() {
 								<form className="space-y-3" onSubmit={submitComment}>
 									{commentError ? <div className="rounded-md border border-destructive/50 bg-destructive/5 p-3 text-sm text-destructive">{commentError}</div> : null}
 									<Textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} rows={4} placeholder="写下你的评论... 支持 Markdown 格式，用 ![表情名](图片URL) 插入表情" />
-									<div className="flex items-center gap-2 text-xs text-muted-foreground">
-										<span>💡 支持表情包：</span>
-										<button type="button" className="underline hover:text-foreground" onClick={() => window.open("/emoji-plaza", "_blank")}>
-											前往表情包广场获取代码
-										</button>
+									<div className="flex flex-col gap-2">
+										<div className="flex items-center gap-2">
+											<button type="button" className="flex items-center gap-1 rounded border px-2 py-1 text-sm hover:bg-muted" onClick={async () => {
+												if (!emojisLoaded) {
+													try {
+														const packs = await apiFetch<any[]>('/emoji/packs');
+														const full = await Promise.all(packs.map(async (p: any) => {
+															const items = await apiFetch<any[]>(`/emoji/packs/${p.id}/items`);
+															return { ...p, items };
+														}));
+														setEmojiPacks(full);
+														setEmojisLoaded(true);
+													} catch(e) {}
+												}
+												setShowEmojiPicker(v => !v);
+											}}>
+												😀 表情
+											</button>
+										</div>
+										{showEmojiPicker && emojiPacks.length > 0 && (
+											<div className="rounded-lg border bg-card shadow-lg">
+												<div className="flex gap-1 overflow-x-auto border-b p-2">
+													{emojiPacks.map((pack, i) => (
+														<button key={pack.id} type="button" onClick={() => setActivePackIdx(i)}
+															className={`flex items-center gap-1 rounded px-2 py-1 text-xs whitespace-nowrap ${activePackIdx === i ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}>
+															{pack.cover_url ? <img src={pack.cover_url} className="h-5 w-5 rounded object-cover" /> : '📦'} {pack.name}
+														</button>
+													))}
+												</div>
+												<div className="grid max-h-40 grid-cols-8 gap-1 overflow-y-auto p-2 sm:grid-cols-10">
+													{(emojiPacks[activePackIdx]?.items || []).map((em: any) => (
+														<button key={em.id} type="button" title={em.name}
+															className="flex items-center justify-center rounded p-1 hover:bg-muted hover:scale-110 transition-transform"
+															onClick={() => { setNewComment(prev => prev + ` ![${em.name}](${em.url}) `); setShowEmojiPicker(false); }}>
+															<img src={em.url} alt={em.name} className="h-8 w-8 object-contain" />
+														</button>
+													))}
+												</div>
+											</div>
+										)}
 									</div>
 						<TurnstileWidget enabled={turnstileActive} siteKey={siteKey} onToken={setTurnstileToken} resetKey={turnstileResetKey} />
 									<div className="flex items-center gap-2">
