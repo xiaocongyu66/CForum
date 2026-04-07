@@ -23,6 +23,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Upgrade wrangler
+        run: npm install -g wrangler@latest
+
       - name: Build frontend
         run: npm run build:frontend
 
@@ -86,8 +89,10 @@ jobs:
         run: |
           if [ -n "$TURNSTILE_SITE_KEY" ]; then
             echo "🔐 Uploading Turnstile configuration..."
-            npx wrangler secret put TURNSTILE_SITE_KEY <<< "$TURNSTILE_SITE_KEY"
-            npx wrangler secret put TURNSTILE_SECRET_KEY <<< "$TURNSTILE_SECRET_KEY"
+            npx wrangler secret delete TURNSTILE_SITE_KEY --env="" || true
+            npx wrangler secret delete TURNSTILE_SECRET_KEY --env="" || true
+            npx wrangler secret put TURNSTILE_SITE_KEY --env="" <<< "$TURNSTILE_SITE_KEY"
+            npx wrangler secret put TURNSTILE_SECRET_KEY --env="" <<< "$TURNSTILE_SECRET_KEY"
           else
             echo "⏭️ Skipping Turnstile configuration (not configured)"
           fi
@@ -101,7 +106,8 @@ jobs:
         run: |
           if [ -n "$BASE_URL" ]; then
             echo "🌐 Uploading BASE_URL configuration..."
-            npx wrangler secret put BASE_URL <<< "$BASE_URL"
+            npx wrangler secret delete BASE_URL --env="" || true
+            npx wrangler secret put BASE_URL --env="" <<< "$BASE_URL"
           else
             echo "⏭️ Skipping BASE_URL configuration (will use request origin)"
           fi
@@ -114,13 +120,21 @@ jobs:
         run: |
           if [ -n "$SMTP_HOST" ]; then
             echo "📧 Uploading SMTP configuration..."
-            npx wrangler secret put SMTP_HOST <<< "$SMTP_HOST"
-            npx wrangler secret put SMTP_PORT <<< "$SMTP_PORT"
-            npx wrangler secret put SMTP_USER <<< "$SMTP_USER"
-            npx wrangler secret put SMTP_PASS <<< "$SMTP_PASS"
-            npx wrangler secret put SMTP_FROM <<< "$SMTP_FROM"
+            # Delete existing secrets to avoid "already in use" error
+            npx wrangler secret delete SMTP_HOST --env="" || true
+            npx wrangler secret delete SMTP_PORT --env="" || true
+            npx wrangler secret delete SMTP_USER --env="" || true
+            npx wrangler secret delete SMTP_PASS --env="" || true
+            npx wrangler secret delete SMTP_FROM --env="" || true
+            npx wrangler secret delete SMTP_FROM_NAME --env="" || true
+            # Now create them
+            npx wrangler secret put SMTP_HOST --env="" <<< "$SMTP_HOST"
+            npx wrangler secret put SMTP_PORT --env="" <<< "$SMTP_PORT"
+            npx wrangler secret put SMTP_USER --env="" <<< "$SMTP_USER"
+            npx wrangler secret put SMTP_PASS --env="" <<< "$SMTP_PASS"
+            npx wrangler secret put SMTP_FROM --env="" <<< "$SMTP_FROM"
             if [ -n "$SMTP_FROM_NAME" ]; then
-              npx wrangler secret put SMTP_FROM_NAME <<< "$SMTP_FROM_NAME"
+              npx wrangler secret put SMTP_FROM_NAME --env="" <<< "$SMTP_FROM_NAME"
             fi
           else
             echo "⏭️ Skipping SMTP configuration (not configured)"
@@ -139,13 +153,19 @@ jobs:
         run: |
           if [ -n "$AWS_ACCESS_KEY_ID" ]; then
             echo "☁️ Uploading S3 configuration..."
-            npx wrangler secret put AWS_ACCESS_KEY_ID <<< "$AWS_ACCESS_KEY_ID"
-            npx wrangler secret put AWS_SECRET_ACCESS_KEY <<< "$AWS_SECRET_ACCESS_KEY"
-            npx wrangler secret put AWS_REGION <<< "$AWS_REGION"
-            npx wrangler secret put AWS_ENDPOINT <<< "$AWS_ENDPOINT"
-            npx wrangler secret put AWS_BUCKET <<< "$AWS_BUCKET"
+            npx wrangler secret delete AWS_ACCESS_KEY_ID --env="" || true
+            npx wrangler secret delete AWS_SECRET_ACCESS_KEY --env="" || true
+            npx wrangler secret delete AWS_REGION --env="" || true
+            npx wrangler secret delete AWS_ENDPOINT --env="" || true
+            npx wrangler secret delete AWS_BUCKET --env="" || true
+            npx wrangler secret delete AWS_PATH_PREFIX --env="" || true
+            npx wrangler secret put AWS_ACCESS_KEY_ID --env="" <<< "$AWS_ACCESS_KEY_ID"
+            npx wrangler secret put AWS_SECRET_ACCESS_KEY --env="" <<< "$AWS_SECRET_ACCESS_KEY"
+            npx wrangler secret put AWS_REGION --env="" <<< "$AWS_REGION"
+            npx wrangler secret put AWS_ENDPOINT --env="" <<< "$AWS_ENDPOINT"
+            npx wrangler secret put AWS_BUCKET --env="" <<< "$AWS_BUCKET"
             if [ -n "$AWS_PATH_PREFIX" ]; then
-              npx wrangler secret put AWS_PATH_PREFIX <<< "$AWS_PATH_PREFIX"
+              npx wrangler secret put AWS_PATH_PREFIX --env="" <<< "$AWS_PATH_PREFIX"
             fi
             echo "✅ S3 configuration uploaded"
           else
