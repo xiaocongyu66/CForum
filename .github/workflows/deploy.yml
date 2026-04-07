@@ -23,15 +23,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Upgrade wrangler
-        run: npm install -g wrangler@latest
-
       - name: Build frontend
         run: npm run build:frontend
 
       - name: Ensure D1 database exists in current account
         run: |
           set -euo pipefail
+
           DB_ID=$(npx wrangler d1 list --json | node -e '
             let input = "";
             process.stdin.on("data", c => input += c);
@@ -41,6 +39,7 @@ jobs:
               process.stdout.write(db?.uuid ?? "");
             });
           ')
+
           if [ -z "$DB_ID" ]; then
             echo "🆕 D1 database cforum-db not found in this account, creating..."
             npx wrangler d1 create cforum-db
@@ -54,10 +53,12 @@ jobs:
               });
             ')
           fi
+
           if [ -z "$DB_ID" ]; then
             echo "❌ Failed to resolve D1 database id for cforum-db"
             exit 1
           fi
+
           sed -i -E "s/\"database_id\": \"[^\"]+\"/\"database_id\": \"$DB_ID\"/" wrangler.jsonc
           echo "✅ Using D1 database id: $DB_ID"
         env:
@@ -79,7 +80,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           accountId: ${{ secrets.CF_ACCOUNT_ID }}
-          command: deploy
+          command: deploy --env=""
           secrets: |
             JWT_SECRET
         env:
@@ -89,12 +90,10 @@ jobs:
         run: |
           if [ -n "$TURNSTILE_SITE_KEY" ]; then
             echo "🔐 Uploading Turnstile configuration..."
-            npx wrangler secret delete TURNSTILE_SITE_KEY --env="" || true
-            npx wrangler secret delete TURNSTILE_SECRET_KEY --env="" || true
             npx wrangler secret put TURNSTILE_SITE_KEY --env="" <<< "$TURNSTILE_SITE_KEY"
             npx wrangler secret put TURNSTILE_SECRET_KEY --env="" <<< "$TURNSTILE_SECRET_KEY"
           else
-            echo "⏭️ Skipping Turnstile configuration (not configured)"
+            echo "⏭️  Skipping Turnstile configuration (not configured)"
           fi
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
@@ -106,10 +105,9 @@ jobs:
         run: |
           if [ -n "$BASE_URL" ]; then
             echo "🌐 Uploading BASE_URL configuration..."
-            npx wrangler secret delete BASE_URL --env="" || true
             npx wrangler secret put BASE_URL --env="" <<< "$BASE_URL"
           else
-            echo "⏭️ Skipping BASE_URL configuration (will use request origin)"
+            echo "⏭️  Skipping BASE_URL configuration (will use request origin)"
           fi
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
@@ -120,14 +118,6 @@ jobs:
         run: |
           if [ -n "$SMTP_HOST" ]; then
             echo "📧 Uploading SMTP configuration..."
-            # Delete existing secrets to avoid "already in use" error
-            npx wrangler secret delete SMTP_HOST --env="" || true
-            npx wrangler secret delete SMTP_PORT --env="" || true
-            npx wrangler secret delete SMTP_USER --env="" || true
-            npx wrangler secret delete SMTP_PASS --env="" || true
-            npx wrangler secret delete SMTP_FROM --env="" || true
-            npx wrangler secret delete SMTP_FROM_NAME --env="" || true
-            # Now create them
             npx wrangler secret put SMTP_HOST --env="" <<< "$SMTP_HOST"
             npx wrangler secret put SMTP_PORT --env="" <<< "$SMTP_PORT"
             npx wrangler secret put SMTP_USER --env="" <<< "$SMTP_USER"
@@ -137,7 +127,7 @@ jobs:
               npx wrangler secret put SMTP_FROM_NAME --env="" <<< "$SMTP_FROM_NAME"
             fi
           else
-            echo "⏭️ Skipping SMTP configuration (not configured)"
+            echo "⏭️  Skipping SMTP configuration (not configured)"
           fi
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
@@ -153,12 +143,6 @@ jobs:
         run: |
           if [ -n "$AWS_ACCESS_KEY_ID" ]; then
             echo "☁️ Uploading S3 configuration..."
-            npx wrangler secret delete AWS_ACCESS_KEY_ID --env="" || true
-            npx wrangler secret delete AWS_SECRET_ACCESS_KEY --env="" || true
-            npx wrangler secret delete AWS_REGION --env="" || true
-            npx wrangler secret delete AWS_ENDPOINT --env="" || true
-            npx wrangler secret delete AWS_BUCKET --env="" || true
-            npx wrangler secret delete AWS_PATH_PREFIX --env="" || true
             npx wrangler secret put AWS_ACCESS_KEY_ID --env="" <<< "$AWS_ACCESS_KEY_ID"
             npx wrangler secret put AWS_SECRET_ACCESS_KEY --env="" <<< "$AWS_SECRET_ACCESS_KEY"
             npx wrangler secret put AWS_REGION --env="" <<< "$AWS_REGION"
@@ -169,7 +153,7 @@ jobs:
             fi
             echo "✅ S3 configuration uploaded"
           else
-            echo "⏭️ Skipping S3 configuration (not configured)"
+            echo "⏭️  Skipping S3 configuration (not configured)"
           fi
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
