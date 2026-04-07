@@ -697,7 +697,7 @@ export function PostPage() {
 													const formData = new FormData();
 													formData.append('file', file);
 													try {
-														const res = await fetch('/r2/upload', { method: 'POST', body: formData });
+														const res = await fetch('/api/upload', { method: 'POST', body: formData, headers: { 'Authorization': `Bearer ${localStorage.getItem('token') || ''}` } });
 														const data = await res.json();
 														if (data.url) {
 															setNewComment(prev => prev + ` ![图片](${data.url}) `);

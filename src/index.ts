@@ -132,6 +132,11 @@ export default {
 			'Access-Control-Allow-Origin': '*',
 			'Access-Control-Allow-Methods': 'GET, HEAD, POST, OPTIONS, DELETE, PUT',
 			'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Timestamp, X-Nonce',
+			'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
+			'X-Content-Type-Options': 'nosniff',
+			'X-Frame-Options': 'SAMEORIGIN',
+			'Referrer-Policy': 'strict-origin-when-cross-origin',
+			'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
 		};
 
 		// Handle OPTIONS (CORS preflight)
@@ -1887,10 +1892,22 @@ if (enhanced) return enhanced;
 			const assetUrl = new URL(request.url);
 			assetUrl.pathname = mapped;
 			const assetRes = await (env as any).ASSETS.fetch(new Request(assetUrl, request));
-			if (assetRes.status !== 404) return assetRes;
+			if (assetRes.status !== 404) {
+				const newRes = new Response(assetRes.body, assetRes);
+				Object.entries(corsHeaders).forEach(([k, v]) => {
+					if (!k.startsWith('Access-Control')) newRes.headers.set(k, v);
+				});
+				return newRes;
+			}
 			if (mapped !== pathname) {
 				const directRes = await (env as any).ASSETS.fetch(request);
-				if (directRes.status !== 404) return directRes;
+				if (directRes.status !== 404) {
+					const newRes = new Response(directRes.body, directRes);
+					Object.entries(corsHeaders).forEach(([k, v]) => {
+						if (!k.startsWith('Access-Control')) newRes.headers.set(k, v);
+					});
+					return newRes;
+				}
 			}
 			return new Response('Not Found', { status: 404 });
 		}
