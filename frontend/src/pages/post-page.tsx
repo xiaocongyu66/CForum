@@ -43,6 +43,8 @@ export function PostPage() {
 	const [editLoading, setEditLoading] = React.useState(false);
 	const [editError, setEditError] = React.useState('');
 	const [uploadLoading, setUploadLoading] = React.useState(false);
+	const [expandedFloors, setExpandedFloors] = React.useState<Set<number>>(new Set());
+	const imageInputRef = React.useRef<HTMLInputElement>(null);
 	const [uploadError, setUploadError] = React.useState('');
 	const editContentRef = React.useRef<HTMLTextAreaElement | null>(null);
 
@@ -595,7 +597,7 @@ export function PostPage() {
 												<div className="mt-2 whitespace-pre-wrap text-sm">{c.content}</div>
 												{c.replies && c.replies.length ? (
 													<div className="mt-3 border-l-2 border-muted pl-3">
-														{c.replies.slice(-1).map((r) => (
+														{(expandedFloors.has(c.id) ? c.replies : c.replies.slice(-1)).map((r) => (
 															<div key={r.id} className="rounded-md bg-muted/30 p-2">
 																<div className="flex items-center justify-between gap-2">
 																	<div className="text-xs">
@@ -636,12 +638,13 @@ export function PostPage() {
 														{c.replies.length > 1 && (
 															<button
 																className="mt-2 text-xs text-primary hover:underline font-medium"
-																onClick={() => {
-																	const id = new URLSearchParams(window.location.search).get("id");
-																	window.location.href = `/post?id=${id}&floor=${c.floor_number || c.id}`;
-																}}
+																onClick={() => setExpandedFloors(prev => {
+																	const next = new Set(prev);
+																	if (next.has(c.id)) next.delete(c.id); else next.add(c.id);
+																	return next;
+																})}
 															>
-																展开全部 {c.replies.length} 条回复 →
+																{expandedFloors.has(c.id) ? '收起回复 ↑' : `展开全部 ${c.replies.length} 条回复 →`}
 															</button>
 														)}
 													</div>
@@ -682,6 +685,36 @@ export function PostPage() {
 												setShowEmojiPicker(v => !v);
 											}}>
 												😀 表情
+											</button>
+											<input
+												type="file"
+												ref={imageInputRef}
+												accept="image/*"
+												className="hidden"
+												onChange={async (e) => {
+													const file = e.target.files?.[0];
+													if (!file) return;
+													const formData = new FormData();
+													formData.append('file', file);
+													try {
+														const res = await fetch('/r2/upload', { method: 'POST', body: formData });
+														const data = await res.json();
+														if (data.url) {
+															setNewComment(prev => prev + ` ![图片](${data.url}) `);
+														} else {
+															alert('上传失败：' + (data.error || '未知错误'));
+														}
+													} catch {
+														alert('图片上传失败');
+													}
+													e.target.value = '';
+												}}
+											/>
+											<button type="button"
+												className="flex items-center gap-1 rounded px-3 py-1.5 text-xs bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+												onClick={() => imageInputRef.current?.click()}
+											>
+												🖼️ 图片
 											</button>
 										</div>
 										{showEmojiPicker && emojiPacks.length > 0 && (
