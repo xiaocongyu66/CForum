@@ -1,56 +1,40 @@
 {
-	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "cforum",
-	"main": "src/index.ts",
-	"compatibility_date": "2025-09-27",
-	"observability": {
-		"enabled": true
-	},
-	"d1_databases": [
-		{
-			"binding": "cforum_db",
-			"database_name": "cforum-db",
-			"database_id": "851270eb-80b8-4e31-825e-645d444898d6",
-			"migrations_dir": "migrations"
-		}
-	],
-	"workers_dev": true,
-	"vars": {
-		"BASE_URL": "https://t.x9n2.qzz.io",
-		"SMTP_HOST": "smtp.example.com",
-		"SMTP_PORT": "465",
-		"SMTP_USER": "noreply@example.com",
-		"SMTP_FROM": "noreply@example.com",
-		"SMTP_FROM_NAME": "论坛管理员",
-		"AI_MODERATION_ENDPOINT": "https://api.openai.com/v1/moderations",
-		"AI_MODERATION_KEY": "key"
-	},
-	"env": {
-		"production": {
-			"vars": {
-				"WORKER_URL": "https://cforum.adysec.workers.dev",
-				"BASE_URL": "https://t.x9n2.qzz.io",
-				"SMTP_HOST": "smtp.example.com",
-				"SMTP_PORT": "465",
-				"SMTP_USER": "noreply@example.com",
-				"SMTP_FROM": "noreply@example.com",
-				"SMTP_FROM_NAME": "论坛管理员",
-				"AI_MODERATION_ENDPOINT": "https://api.openai.com/v1/moderations",
-				"AI_MODERATION_KEY": "key"
-			}
-		},
-		"development": {
-			"vars": {
-				"WORKER_URL": "http://localhost:8787",
-				"BASE_URL": "http://localhost:8787",
-				"SMTP_HOST": "smtp.example.com",
-				"SMTP_PORT": "465",
-				"SMTP_USER": "noreply@example.com",
-				"SMTP_FROM": "noreply@example.com",
-				"SMTP_FROM_NAME": "论坛管理员",
-				"AI_MODERATION_ENDPOINT": "https://api.openai.com/v1/moderations",
-				"AI_MODERATION_KEY": "key"
-			}
-		}
-	}
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cforum",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-09-27",
+  "observability": {
+    "enabled": true
+  },
+  "d1_databases": [
+    {
+      "binding": "cforum_db",
+      "database_name": "cforum-db",
+      "database_id": "851270eb-80b8-4e31-825e-645d444898d6",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "workers_dev": true,
+  // 注意：vars 中不再包含任何敏感信息
+  "vars": {
+    // 可选：非敏感的默认值，但会被 secrets 覆盖
+    "BASE_URL": "https://t.x9n2.qzz.io"
+    // SMTP_*, JWT_SECRET, AI_MODERATION_KEY 等均已移除
+  },
+  "env": {
+    "production": {
+      "vars": {
+        "WORKER_URL": "https://cforum.adysec.workers.dev",
+        "BASE_URL": "https://t.x9n2.qzz.io"
+        // 敏感信息全部删除
+      }
+    },
+    "development": {
+      "vars": {
+        "WORKER_URL": "http://localhost:8787",
+        "BASE_URL": "http://localhost:8787"
+        // 开发环境也可以保留默认值，但实际会使用本地 .dev.vars
+      }
+    }
+  }
 }
