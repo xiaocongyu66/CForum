@@ -4,7 +4,7 @@
 	"private": true,
 	"author": "adysec",
 	"scripts": {
-		"build:frontend": "vite build --config frontend/vite.config.ts",
+		"build:frontend": "vite build --config frontend/vite.config.ts && cp _headers public/_headers",
 		"dev:frontend": "vite --config frontend/vite.config.ts",
 		"dev": "npm run build:frontend && wrangler dev --local",
 		"dev:pages": "npm run build:frontend && wrangler pages dev public -- npm run dev:frontend",

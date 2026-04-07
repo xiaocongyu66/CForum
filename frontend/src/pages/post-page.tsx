@@ -699,7 +699,7 @@ export function PostPage() {
 													formData.append('file', file);
 													try {
 														const uploadBase = import.meta.env.VITE_API_BASE_URL ? import.meta.env.VITE_API_BASE_URL + '/api' : '/api';
-								const res = await fetch(`${uploadBase}/upload`, { method: 'POST', body: formData, headers: { 'Authorization': `Bearer ${localStorage.getItem('token') || ''}` } });
+								const res = await fetch(`${uploadBase}/upload`, { method: 'POST', body: formData, headers: getSecurityHeaders('POST', null) });
 														const data = await res.json();
 														if (data.url) {
 															setNewComment(prev => prev + ` ![图片](${data.url}) `);
