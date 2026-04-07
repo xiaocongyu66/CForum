@@ -139,6 +139,32 @@ jobs:
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
           SMTP_FROM_NAME: ${{ secrets.SMTP_FROM_NAME }}
 
+      - name: Upload S3 secrets (optional)
+        run: |
+          if [ -n "$AWS_ACCESS_KEY_ID" ]; then
+            echo "☁️ Uploading S3 configuration..."
+            npx wrangler secret put AWS_ACCESS_KEY_ID --env="" <<< "$AWS_ACCESS_KEY_ID"
+            npx wrangler secret put AWS_SECRET_ACCESS_KEY --env="" <<< "$AWS_SECRET_ACCESS_KEY"
+            npx wrangler secret put AWS_REGION --env="" <<< "$AWS_REGION"
+            npx wrangler secret put AWS_ENDPOINT --env="" <<< "$AWS_ENDPOINT"
+            npx wrangler secret put AWS_BUCKET --env="" <<< "$AWS_BUCKET"
+            if [ -n "$AWS_PATH_PREFIX" ]; then
+              npx wrangler secret put AWS_PATH_PREFIX --env="" <<< "$AWS_PATH_PREFIX"
+            fi
+            echo "✅ S3 configuration uploaded"
+          else
+            echo "⏭️  Skipping S3 configuration (not configured)"
+          fi
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ENDPOINT: ${{ secrets.AWS_ENDPOINT }}
+          AWS_BUCKET: ${{ secrets.AWS_BUCKET }}
+          AWS_PATH_PREFIX: ${{ secrets.AWS_PATH_PREFIX }}
+
       - name: Ensure Cloudflare Pages project exists
         run: |
           if npx wrangler pages project list | grep -q "cforum"; then
@@ -164,4 +190,3 @@ jobs:
           echo "📍 Pages: https://cforum.pages.dev (静态资源 - 免费无限)"
           echo "📍 Worker: https://cforum.workers.dev (API - 按需计费)"
           echo "💡 使用 GitHub Secrets 配置自定义域名"
-

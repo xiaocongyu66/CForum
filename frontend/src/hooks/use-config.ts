@@ -10,7 +10,7 @@ export function useConfig() {
 		let cancelled = false;
 		(async () => {
 			try {
-				const res = await fetch('/api/config');
+				const res = await fetch((import.meta.env.VITE_API_BASE_URL || '') + '/api/config');
 				if (!res.ok) throw new Error('无法加载站点配置');
 				const data = (await res.json()) as ForumConfig;
 				if (!cancelled) setConfig(data);

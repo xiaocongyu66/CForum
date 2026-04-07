@@ -31,7 +31,7 @@ export function LoginPage() {
 		}
 		setLoading(true);
 		try {
-			const res = await fetch('/api/login', {
+			const res = await fetch((import.meta.env.VITE_API_BASE_URL || '') + '/api/login', {
 				method: 'POST',
 				headers: getSecurityHeaders('POST'),
 				body: JSON.stringify({

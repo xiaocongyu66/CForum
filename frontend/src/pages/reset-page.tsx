@@ -33,7 +33,7 @@ export function ResetPage() {
 		if (turnstileActive && !turnstileToken) return setError('请完成验证码验证');
 		setLoading(true);
 		try {
-			const res = await fetch('/api/auth/reset-password', {
+			const res = await fetch((import.meta.env.VITE_API_BASE_URL || '') + '/api/auth/reset-password', {
 				method: 'POST',
 				headers: getSecurityHeaders('POST'),
 				body: JSON.stringify({

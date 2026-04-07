@@ -28,7 +28,7 @@ export function ForgotPage() {
 		if (turnstileActive && !turnstileToken) return setError('请完成验证码验证');
 		setLoading(true);
 		try {
-			const res = await fetch('/api/auth/forgot-password', {
+			const res = await fetch((import.meta.env.VITE_API_BASE_URL || '') + '/api/auth/forgot-password', {
 				method: 'POST',
 				headers: getSecurityHeaders('POST'),
 				body: JSON.stringify({ email, 'cf-turnstile-response': turnstileToken })

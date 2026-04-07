@@ -43,7 +43,7 @@ export type Comment = {
 	created_at: string;
 };
 
-const API_BASE = '/api';
+const API_BASE = (import.meta.env.VITE_API_BASE_URL ? import.meta.env.VITE_API_BASE_URL + '/api' : '/api');
 
 export function getSecurityHeaders(method: string, contentType: string | null = 'application/json') {
 	const headers: Record<string, string> = {};

@@ -33,7 +33,7 @@ export function RegisterPage() {
 
 		setLoading(true);
 		try {
-			const res = await fetch('/api/register', {
+			const res = await fetch((import.meta.env.VITE_API_BASE_URL || '') + '/api/register', {
 				method: 'POST',
 				headers: getSecurityHeaders('POST'),
 				body: JSON.stringify({

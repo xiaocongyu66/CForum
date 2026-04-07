@@ -496,7 +496,8 @@ export function PostPage() {
                                         const formData = new FormData();
                                         formData.append('file', file);
                                         formData.append('type', 'post');
-                                        const res = await fetch('/api/upload', {
+                                        const uploadBase2 = import.meta.env.VITE_API_BASE_URL ? import.meta.env.VITE_API_BASE_URL + '/api' : '/api';
+                                        const res = await fetch(`${uploadBase2}/upload`, {
                                             method: 'POST',
                                             headers: getSecurityHeaders('POST', null),
                                             body: formData,
@@ -697,7 +698,8 @@ export function PostPage() {
 													const formData = new FormData();
 													formData.append('file', file);
 													try {
-														const res = await fetch('/api/upload', { method: 'POST', body: formData, headers: { 'Authorization': `Bearer ${localStorage.getItem('token') || ''}` } });
+														const uploadBase = import.meta.env.VITE_API_BASE_URL ? import.meta.env.VITE_API_BASE_URL + '/api' : '/api';
+								const res = await fetch(`${uploadBase}/upload`, { method: 'POST', body: formData, headers: { 'Authorization': `Bearer ${localStorage.getItem('token') || ''}` } });
 														const data = await res.json();
 														if (data.url) {
 															setNewComment(prev => prev + ` ![图片](${data.url}) `);

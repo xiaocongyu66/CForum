@@ -554,7 +554,7 @@ export function IndexPage() {
 													const formData = new FormData();
 													formData.append('file', file);
 													formData.append('type', 'post');
-													const res = await fetch('/api/upload', { method: 'POST', headers: getSecurityHeaders('POST', null), body: formData });
+													const res = await fetch((import.meta.env.VITE_API_BASE_URL || '') + '/api/upload', { method: 'POST', headers: getSecurityHeaders('POST', null), body: formData });
 													const data = await res.json();
 													if (!res.ok) throw new Error(data?.error || '上传失败');
 													insertIntoContent(`\n\n![](${data.url})\n\n`);
